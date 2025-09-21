@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate Validator</title>
+<style>
+body { font-family: Arial,sans-serif; background:#f0f2f5; padding:20px;}
+.container { max-width:800px; margin:0 auto; background:white; padding:30px; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,0.1);}
+.header { text-align:center; margin-bottom:20px;}
+.mode-card { display:inline-block; width:48%; margin:1%; padding:20px; border:2px solid #667eea; border-radius:10px; cursor:pointer; text-align:center; transition:0.3s;}
+.mode-card.active { background:#667eea; color:white;}
+.upload-area { border:2px dashed #667eea; padding:30px; text-align:center; margin-top:20px; cursor:pointer; display:none;}
+.results-panel { background:#e8f0fe; padding:20px; margin-top:20px; border-radius:10px; display:none;}
+.btn { padding:10px 20px; margin-top:10px; cursor:pointer; border:none; border-radius:5px; background:#667eea; color:white;}
+.score-circle { width:120px; height:120px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:bold; color:white; margin:20px auto;}
+.score-high { background:linear-gradient(135deg,#4CAF50,#45a049);}
+.score-medium { background:linear-gradient(135deg,#FF9800,#f57c00);}
+.score-low { background:linear-gradient(135deg,#f44336,#d32f2f);}
+.ocr-box { max-height:150px; overflow-y:auto; background:#fff; padding:10px; border-radius:5px; border:1px solid #ccc; margin-top:10px; white-space:pre-wrap; word-wrap:break-word;}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Certificate Validator</h1>
+        <p>Select verification mode and upload certificate</p>
+    </div>
+
+    <div class="mode-selection">
+        <div class="mode-card" id="mode-db">Database Verification</div>
+        <div class="mode-card" id="mode-ocr">OCR Only</div>
+    </div>
+
+    <div class="upload-area" id="upload-area">
+        <p>Click to upload certificate</p>
+        <input type="file" id="file-input" style="display:none;">
+        <button class="btn" id="upload-btn">Upload</button>
+    </div>
+
+    <div class="results-panel" id="results-panel">
+        <div class="score-circle" id="trust-score">0%</div>
+        <div class="ocr-box" id="ocr-text">OCR Extracted Text Will Appear Here...</div>
+    </div>
+</div>
+
+<script>
+const modeCards = document.querySelectorAll('.mode-card');
+const uploadArea = document.getElementById('upload-area');
+const fileInput = document.getElementById('file-input');
+const uploadBtn = document.getElementById('upload-btn');
+const resultsPanel = document.getElementById('results-panel');
+const trustScore = document.getElementById('trust-score');
+const ocrText = document.getElementById('ocr-text');
+
+modeCards.forEach(card => {
+    card.addEventListener('click', () => {
+        modeCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        uploadArea.style.display = 'block';
+        resultsPanel.style.display = 'none';
+    });
+});
+
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+    if(fileInput.files.length > 0){
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/upload', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                alert(data.error);
+                return;
+            }
+
+            resultsPanel.style.display = 'block';
+            trustScore.textContent = data.score + '%';
+
+            if(data.score > 70) trustScore.className = 'score-circle score-high';
+            else if(data.score > 40) trustScore.className = 'score-circle score-medium';
+            else trustScore.className = 'score-circle score-low';
+
+            ocrText.textContent = data.ocr_text;
+        })
+        .catch(err => {
+            alert('Error processing file');
+            console.error(err);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
+
+
