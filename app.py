@@ -36,7 +36,8 @@ def upload_file():
         return jsonify({'error': 'No selected file'}), 400
 
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(filepath)
+file.save(filepath)
+
 
     try:
         if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
